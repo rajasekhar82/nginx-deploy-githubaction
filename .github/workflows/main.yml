@@ -1,0 +1,31 @@
+name: Deploy NGINX Website
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install NGINX if not present
+        run: |
+          if ! command -v nginx >/dev/null 2>&1; then
+            sudo apt update
+            sudo apt install -y nginx
+            sudo systemctl enable nginx
+          fi
+
+      - name: Deploy Website
+        run: |
+          sudo cp index.html /var/www/html/index.html
+          sudo systemctl restart nginx
+
+      - name: Verify Website
+        run: |
+          curl http://localhost
