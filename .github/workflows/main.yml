@@ -10,8 +10,7 @@ jobs:
     runs-on: self-hosted
 
     steps:
-
-      - name: Checkout
+      - name: Checkout Source
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
@@ -21,13 +20,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login DockerHub
+      - name: Login to Docker Hub
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
           -u "${{ secrets.DOCKER_USERNAME }}" \
           --password-stdin
 
-      - name: Login ECR
+      - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
           docker login \
@@ -39,7 +38,7 @@ jobs:
         run: |
           docker build -t myapp:${{ github.run_number }} .
 
-      - name: Push to DockerHub
+      - name: Push Image to Docker Hub
         run: |
           docker tag myapp:${{ github.run_number }} \
           ${{ secrets.DOCKER_USERNAME }}/myapp:${{ github.run_number }}
@@ -47,7 +46,7 @@ jobs:
           docker push \
           ${{ secrets.DOCKER_USERNAME }}/myapp:${{ github.run_number }}
 
-      - name: Push to ECR
+      - name: Push Image to Amazon ECR
         run: |
           docker tag myapp:${{ github.run_number }} \
           ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/myapp:${{ github.run_number }}
@@ -62,5 +61,9 @@ jobs:
 
           docker run -d \
             --name myapp \
-            -p 5000:5000 \
+            -p 80:80 \
             ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/myapp:${{ github.run_number }}
+
+      - name: Verify Container
+        run: |
+          docker ps
